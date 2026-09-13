@@ -546,11 +546,13 @@ class Gemma4CausalLMPreprocessor(CausalLMPreprocessor):
         pixel_values = images_dict["pixel_values"]
         pixel_position_ids = images_dict["pixel_position_ids"]
 
-        if keras.config.backend() == "torch":
-            if not isinstance(pixel_values, tf.Tensor):
-                pixel_values = pixel_values.cpu()
-            if not isinstance(pixel_position_ids, tf.Tensor):
-                pixel_position_ids = pixel_position_ids.cpu()
+        # Inside a grain pipeline the converter returns numpy, which has no
+        # `cpu()`. Only a torch tensor needs moving off the device, so ask for
+        # the method rather than the backend.
+        if hasattr(pixel_values, "cpu"):
+            pixel_values = pixel_values.cpu()
+        if hasattr(pixel_position_ids, "cpu"):
+            pixel_position_ids = pixel_position_ids.cpu()
 
         pixel_values = tf.reshape(
             pixel_values,
@@ -597,10 +599,10 @@ class Gemma4CausalLMPreprocessor(CausalLMPreprocessor):
 
         # The audio converter runs as a Keras layer and may return a CUDA
         # torch tensor on GPU. Move to CPU so subsequent TF ops can accept it
-        # (mirrors the same guard in _preprocess_images).
-        if keras.config.backend() == "torch":
-            if not isinstance(mel, tf.Tensor):
-                mel = mel.cpu()
+        # (mirrors the same guard in _preprocess_images). Inside a grain
+        # pipeline it returns numpy instead, which has no `cpu()`.
+        if hasattr(mel, "cpu"):
+            mel = mel.cpu()
 
         # Expand dims to model expectation of Clips step: (B, 1, Seq, Feat)
         mel = tf.expand_dims(mel, axis=1)
@@ -645,11 +647,13 @@ class Gemma4CausalLMPreprocessor(CausalLMPreprocessor):
         pixel_values = videos_dict["pixel_values"]
         pixel_position_ids = videos_dict["pixel_position_ids"]
 
-        if keras.config.backend() == "torch":
-            if not isinstance(pixel_values, tf.Tensor):
-                pixel_values = pixel_values.cpu()
-            if not isinstance(pixel_position_ids, tf.Tensor):
-                pixel_position_ids = pixel_position_ids.cpu()
+        # Inside a grain pipeline the converter returns numpy, which has no
+        # `cpu()`. Only a torch tensor needs moving off the device, so ask for
+        # the method rather than the backend.
+        if hasattr(pixel_values, "cpu"):
+            pixel_values = pixel_values.cpu()
+        if hasattr(pixel_position_ids, "cpu"):
+            pixel_position_ids = pixel_position_ids.cpu()
 
         return {
             "pixel_values": pixel_values,

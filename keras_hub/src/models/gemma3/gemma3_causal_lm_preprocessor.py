@@ -491,9 +491,10 @@ class Gemma3CausalLMPreprocessor(CausalLMPreprocessor):
         )
         images = self.image_converter(images)
 
-        if keras.config.backend() == "torch" and not isinstance(
-            images, tf.Tensor
-        ):
+        # Inside a grain pipeline the converter returns numpy, which has no
+        # `cpu()`. Only a torch tensor needs moving off the device, so ask for
+        # the method rather than the backend.
+        if hasattr(images, "cpu"):
             images = images.cpu()
 
         # Recover the rank.
